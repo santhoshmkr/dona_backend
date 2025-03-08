@@ -39,7 +39,9 @@ const languageSchema = new mongoose.Schema({
 }, { _id: false });
 
 const tamilSchema = new mongoose.Schema({
-    Doner: personSchema
+    Doner: personSchema,
+    Doner_Dependent: personSchema,
+    Recipient: personSchema
 }, { _id: false });
 
 const DataSchema = new mongoose.Schema({
