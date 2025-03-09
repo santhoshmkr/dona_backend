@@ -16,12 +16,33 @@ const personSchema = new mongoose.Schema({
     gender: { type: String, required: false },
     identificationMarks: [{ type: String }],
     maritalStatus: { type: String, required: false },
+    spouseName:{type:String,required:false},
     name: { type: String, required: false },
     panNumber: { type: String, required: false },
     permanentAddress: { type: String, required: false },
     presentAddress: { type: String, required: false },
     rationNumber: { type: String, required: false },
     relationship: { type: String, required: false },
+    relationship_with_patient: { type: String, required: false },
+    relationship_with_Doner: { type: String, required: false },
+    relationshipPersonName: { type: String, required: false }
+}, { _id: false });
+const TamilPerson = new mongoose.Schema({
+    
+    age: { type: String, required: false },
+    city: { type: String, required: false },
+    dateOfBirth: { type: String, required: false },
+    gender: { type: String, required: false },
+    identificationMarks: [{ type: String }],
+    maritalStatus: { type: String, required: false },
+    spouseName:{type:String,required:false},
+    name: { type: String, required: false },
+    permanentAddress: { type: String, required: false },
+    presentAddress: { type: String, required: false },
+    
+    relationship: { type: String, required: false },
+    relationship_with_patient: { type: String, required: false },
+    relationship_with_Doner: { type: String, required: false },
     relationshipPersonName: { type: String, required: false }
 }, { _id: false });
 
@@ -39,9 +60,9 @@ const languageSchema = new mongoose.Schema({
 }, { _id: false });
 
 const tamilSchema = new mongoose.Schema({
-    Doner: personSchema,
-    Doner_Dependent: personSchema,
-    Recipient: personSchema
+    Doner: TamilPerson,
+    Doner_Dependent: TamilPerson,
+    Recipient: TamilPerson
 }, { _id: false });
 
 const DataSchema = new mongoose.Schema({
