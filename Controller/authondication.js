@@ -3,71 +3,102 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken"
 
 // API For Registering User
-export const register = async (req,res)=>{
-    const {email , name, password} = req.body;
+export const register = async (req, res) => {
+    const { email, name, password, role } = req.body;
 
-    if(!email || !name || !password){
-        return res.status(404).json({
-            message:"Please fill out the form"
-        });
-    }
-try {
-    const existingPatient = await Patient.findOne({email});
-    if(existingPatient){
-        return res.status(401).json({
-            message:"User Is Already Existing"
-        });
+    // Basic input validation
+    if (!email || !name || !password || !role) {
+        return res.status(400).json({ message: "Please fill out all fields" });
     }
 
-    const hashPassword = await bcrypt.hash(password,10);
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        return res.status(400).json({ message: "Invalid email format" });
+    }
 
-    const newPatient = Patient({email,name,password:hashPassword});
-    await newPatient.save();
-    return res.status(201).json({
-        message:"User Created"
-    })
-} catch (error) {
-    console.log(error);
-    
-    return res.status(505).json({
-        message:'SomeThing Worng'
-    })
-}
-}
+    // Password strength validation
+    if (password.length < 8) {
+        return res.status(400).json({ message: "Password must be at least 8 characters" });
+    }
 
-export const login = async(req,res)=>{
-    const {email,password} = req.body;
     try {
-        const chechPatient = await Patient.findOne({email});
-        if(!chechPatient){
-            return res.status(404).json({
-                message:"User Not Have Account"
-            });
+        // Check for existing user
+        const existingPatient = await Patient.findOne({ email });
+        if (existingPatient) {
+            return res.status(409).json({ message: "User already exists" });
         }
 
-        const comparPassword = await bcrypt.compare(password,chechPatient.password);
-        if(!comparPassword){
-            return res.status(404).json({
-                message:"Worng Passoword"
-            });
-        }
-        const token = jwt.sign({
-            id: chechPatient._id,phone_number:chechPatient.email
-        },process.env.JWT_SECRET,{
-            expiresIn:"24h"
-        }
-    );
+        // Hash password
+        const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 10;
+        const hashPassword = await bcrypt.hash(password, saltRounds);
 
-    return res.status(201).json({
-        message:"Login Successfully",
-        token:token
-    })
-        
+        // Create new user
+        const newPatient = new Patient({ 
+            email, 
+            name, 
+            password: hashPassword, 
+            role 
+        });
+        await newPatient.save();
+
+        // Log successful registration
+        console.log(`New user registered: ${email}`);
+
+        return res.status(201).json({ message: "User created successfully" });
     } catch (error) {
-        console.log(error);
+        console.error("Registration error:", error);
+        return res.status(500).json({ message: "Server error" });
+    }
+};
+
+export const login = async (req, res) => {
+    const { email, password } = req.body;
+
+    try {
+        // Find user by email
+        const user = await Patient.findOne({ email });
+        
+        // Handle case where user doesn't exist
+        if (!user) {
+            return res.status(401).json({
+                message: "Invalid credentials"
+            });
+        }
+
+        // Verify password
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        
+        // Handle invalid password
+        if (!isPasswordValid) {
+            return res.status(401).json({
+                message: "Invalid credentials"
+            });
+        }
+
+        // Create JWT token
+        const token = jwt.sign(
+            {
+                id: user._id,
+                email: user.email,
+                role: user.role
+            },
+            process.env.JWT_SECRET,
+            { expiresIn: "24h" }
+        );
+
+        console.log(`User ${user._id} logged in successfully`);
+
+        return res.status(200).json({
+            message: "Login successful",
+            token,
+            role: user.role
+        });
+    } catch (error) {
+        console.error("Login error:", error);
         
         return res.status(500).json({
-            message:"SomeThing Went Worng"
-        })
+            message: "Server error"
+        });
     }
-}
+};
